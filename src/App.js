@@ -1,26 +1,40 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useCallback } from 'react';
+import injectSheet from 'react-jss';
+import './reset.css';
 
-function App() {
+import TeamPage from './TeamPage';
+
+function App({ classes }) {
+  const { app_, header_ } = classes
+  const [isHome, setIsHome] = useState(true)
+
+  const changePage = useCallback(() => setIsHome(!isHome), [isHome])
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <div className={app_}>
+      <header className={header_}>
+        <button onClick={changePage}>{isHome ? 'To Battle' : 'To Home'}</button>
       </header>
+      {isHome ? <TeamPage /> : null}
     </div>
-  );
+  )
 }
 
-export default App;
+const styles = {
+  app_: {
+    height: '100vh',
+    width: '100%',
+    // padding: 10,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+
+  header_: {
+    width: '100%',
+    height: 30,
+    boxShadow: [[0, 4, 4, '#0004']],
+    marginBottom: 30,
+  },
+};
+
+export default injectSheet(styles)(App);

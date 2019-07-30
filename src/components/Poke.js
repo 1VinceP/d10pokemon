@@ -1,20 +1,29 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import injectSheet from 'react-jss';
 import PropTypes from 'prop-types';
 
-function Poke({ classes, poke, teamNum, lockMoves, deletePoke }) {
+function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke }) {
   const {
     container_, nameContainer_, titleContainer_,
-    imageContainer_, statContainer_, attackContainer_,
+    imageContainer_, attackStatContainer_, statContainer_,
+    attackContainer_,
   } = classes;
+  // state
+  const defaultMoveDetail = poke.movesLocked
+    ? { ...poke.moves[0] }
+    : { name: '', damage_class: { name: '' }, pp: '', effect_entries: [{ short_effect: '' }] };
   const [move1, setMove1] = useState('');
   const [move2, setMove2] = useState('');
   const [move3, setMove3] = useState('');
   const [move4, setMove4] = useState('');
+  const [moveDetails, setMoveDetails] = useState(defaultMoveDetail);
 
+  // refs
+  const attackDataRef = useRef();
+
+  // callbacks
   const handleChangeMove = useCallback(( e, id ) => {
     const value = JSON.parse(e.target.value);
-    console.log(value);
     if( id === 1 ) setMove1(value);
     if( id === 2 ) setMove2(value);
     if( id === 3 ) setMove3(value);
@@ -30,6 +39,15 @@ function Poke({ classes, poke, teamNum, lockMoves, deletePoke }) {
     deletePoke(teamNum, poke.localId);
   }, [deletePoke, teamNum, poke.localId]);
 
+  const showMoveDetails = useCallback(() => {
+    attackDataRef.current.style.opacity = 1;
+  }, []);
+
+  const resetMoveDetails = useCallback(() => {
+    attackDataRef.current.style.opacity = 0;
+  }, []);
+
+  // element creators
   const headerTitles = ['', 'hp', 'atk', 'def', 'sp.atk', 'sp.def', 'spd'];
   const headers = headerTitles.map(title => (
     <div key={title} className="box head bottom right">{title}</div>
@@ -39,13 +57,16 @@ function Poke({ classes, poke, teamNum, lockMoves, deletePoke }) {
     .map(move => <option key={move.name} value={JSON.stringify({ ...move })}>{move.name}</option>);
   moves.unshift(<option key="select" value="">Select</option>);
 
+  const moveBg = index => ({
+    background: `linear-gradient(to bottom, ${theme.colors.secondary} 80%, ${theme.colors[poke.moves[index].type]}) 20%`,
+  });
+
   return (
     <div className={container_}>
       <section className={`${nameContainer_} top bottom left`}>{poke.name} ({poke.level})</section>
 
       <section className={`${titleContainer_} top right bottom`}>
-        <button onClick={setMoves}>Lock Moves</button>
-        Stats
+        {!poke.movesLocked && <button onClick={setMoves}>Lock Moves</button>}
         <button onClick={onDelete}>X</button>
       </section>
 
@@ -71,7 +92,29 @@ function Poke({ classes, poke, teamNum, lockMoves, deletePoke }) {
         <div className="box level bottom right">{poke.statsAtLevel['special-attack']}</div>
         <div className="box level bottom right">{poke.statsAtLevel['special-defense']}</div>
         <div className="box level bottom right">{poke.statsAtLevel.speed}</div>
+
+        <section ref={attackDataRef} className={attackStatContainer_}>
+            <div className="title" style={{ borderBottom: `1px solid ${theme.colors[moveDetails.type]}` }}>
+              {moveDetails.name}
+              <div className="type" style={{ color: theme.colors[moveDetails.type] }}>{moveDetails.type}</div>
+            </div>
+            <div className="body">
+              {/* headers */}
+              <div className="box bottom right">Class</div>
+              <div className="box bottom right">Power</div>
+              <div className="box bottom right">Acc</div>
+              <div className="box bottom right">PP</div>
+              {/* stats */}
+              <div className="box base bottom right">{moveDetails.damage_class.name}</div>
+              <div className="box base bottom right">{moveDetails.power || '--'}</div>
+              <div className="box base bottom right">{moveDetails.accuracy || '--'}</div>
+              <div className="box base bottom right">{moveDetails.pp}</div>
+              {/* description */}
+              <div className="box desc base">{moveDetails.effect_entries[0].short_effect}</div>
+            </div>
+          </section>
       </section>
+
 
       {!poke.movesLocked ? (
         <section className={`${attackContainer_} left right bottom`}>
@@ -82,11 +125,11 @@ function Poke({ classes, poke, teamNum, lockMoves, deletePoke }) {
         </section>
       )
       : (
-        <section className={`${attackContainer_} left right bottom`}>
-          <div>{poke.moves[0].name}</div>
-          <div>{poke.moves[1].name}</div>
-          <div>{poke.moves[2].name}</div>
-          <div>{poke.moves[3].name}</div>
+        <section className={`${attackContainer_} left right bottom`} onMouseEnter={showMoveDetails} onMouseLeave={resetMoveDetails}>
+          <div style={moveBg(0)} onMouseEnter={() => setMoveDetails(poke.moves[0])}>{poke.moves[0].name}</div>
+          <div style={moveBg(1)} onMouseEnter={() => setMoveDetails(poke.moves[1])}>{poke.moves[1].name}</div>
+          <div style={moveBg(2)} onMouseEnter={() => setMoveDetails(poke.moves[2])}>{poke.moves[2].name}</div>
+          <div style={moveBg(3)} onMouseEnter={() => setMoveDetails(poke.moves[3])}>{poke.moves[3].name}</div>
         </section>
       )}
     </div>
@@ -96,6 +139,7 @@ function Poke({ classes, poke, teamNum, lockMoves, deletePoke }) {
 Poke.propTypes = {
   lockMoves: PropTypes.func,
   deletePoke: PropTypes.func,
+  inCombat: PropTypes.bool,
   poke: PropTypes.object,
   teamNum: PropTypes.number,
 };
@@ -103,7 +147,13 @@ Poke.propTypes = {
 Poke.defaultProps = {
   lockMoves: () => {},
   deletePoke: () => {},
-  poke: { name: '', image: {}, moves: [], types: [] },
+  inCombat: false,
+  poke: {
+    name: '',
+    image: {},
+    moves: [],
+    types: [],
+  },
   teamNum: 0,
 };
 
@@ -121,25 +171,36 @@ const styles = theme => {
       gridTemplateRows: '30px 100px 30px',
       gridTemplateColumns: '120px auto',
       marginBottom: 20,
+      position: 'relative',
+      transform: props => `scale(${props.inCombat ? .8 : 1})`,
       '& .top': { borderTop: [[1, 'solid', theme.colors.secondary]] },
       '& .right': { borderRight: [[1, 'solid', theme.colors.secondary]] },
       '& .bottom': { borderBottom: [[1, 'solid', theme.colors.secondary]] },
       '& .left': { borderLeft: [[1, 'solid', theme.colors.secondary]] },
-    },
-
-    titleContainer_: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: [[0, 20]],
-      background: props => gradientBg(props),
+      '& .box': {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 3,
+        margin: 1,
+      },
+      '& .base': { background: '#646464' },
     },
 
     nameContainer_: {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      background: props => theme.colors[props.poke.types[0]],
+      background: theme.colors.secondary,
+      color: 'white',
+    },
+
+    titleContainer_: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      padding: [[0, 20]],
+      background: props => gradientBg(props),
     },
 
     imageContainer_: {
@@ -154,6 +215,46 @@ const styles = theme => {
       },
     },
 
+    attackStatContainer_: {
+      height: '100%',
+      width: '100%',
+      background: theme.colors.secondary,
+      opacity: 0,
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      zIndex: 10,
+      display: 'flex',
+      flexDirection: 'column',
+      padding: 3,
+      color: 'white',
+      fontSize: 13,
+      transition: [['.15s', 'opacity', 'ease-in-out']],
+      '& .title': {
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingRight: 10,
+        paddingBottom: 2,
+        fontSize: 18,
+        '& .type': { fontSize: 16 },
+      },
+      '& .body': {
+        height: '80%',
+        width: '100%',
+        display: 'grid',
+        gridTemplateRows: '1fr 1fr 2fr',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        '& .desc': {
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          gridColumn: '1 / span 4',
+          padding: 3,
+        },
+      },
+    },
+
     statContainer_: {
       width: '100%',
       background: theme.colors.secondary,
@@ -161,19 +262,13 @@ const styles = theme => {
       gridTemplateRows: '1fr 1fr 2fr',
       gridTemplateColumns: '40px repeat(6, 1fr)',
       color: 'white',
-      '& .box': {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 3,
-        margin: 1,
-      },
+      position: 'relative',
+      zIndex: 8,
       '& .label': {
         fontSize: 10,
         background: theme.colors.secondary,
       },
       '& .head': { background: theme.colors.secondary },
-      '& .base': { background: '#646464' },
       '& .level': { background: 'green' },
     },
 
@@ -194,11 +289,17 @@ const styles = theme => {
         border: 'none',
       },
       '& div': {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        border: [[1, 'solid', theme.colors.secondary]],
+        borderRadius: 3,
         textAlign: 'center',
         transition: [['.15s', 'all', 'ease-in-out']],
+        fontSize: 12,
         '&:hover': {
           cursor: 'pointer',
-          border: [[1, 'solid', 'lightblue']],
+          border: [[1, 'solid', 'white']],
         },
       },
     },

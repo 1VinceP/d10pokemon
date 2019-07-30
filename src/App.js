@@ -1,30 +1,28 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import injectSheet from 'react-jss';
+import { Link } from 'react-router-dom';
 import './reset.css';
 
-import TeamPage from './TeamPage';
+import routes from './routes';
 
 function App({ classes }) {
-  const { app_, header_ } = classes
-  const [isHome, setIsHome] = useState(true)
-
-  const changePage = useCallback(() => setIsHome(!isHome), [isHome])
+  const { app_, header_ } = classes;
 
   return (
     <div className={app_}>
       <header className={header_}>
-        <button onClick={changePage}>{isHome ? 'To Battle' : 'To Home'}</button>
+        <Link to="/"><button>Home</button></Link>
+        <Link to="/battle"><button>To Battle</button></Link>
       </header>
-      {isHome ? <TeamPage /> : null}
+      {routes}
     </div>
-  )
+  );
 }
 
 const styles = {
   app_: {
     height: '100vh',
     width: '100%',
-    // padding: 10,
     display: 'flex',
     flexDirection: 'column',
   },

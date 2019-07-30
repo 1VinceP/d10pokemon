@@ -26,10 +26,40 @@ const initialState = {
       speed: 600,
     },
     moves: [
-      { name: 'ember', link: 'google.com' },
-      { name: 'flamethrower', link: 'google.com' },
-      { name: 'defence curl', link: 'google.com' },
-      { name: 'hyper beam', link: 'google.com' },
+      {
+        name: 'Fire Fang',
+        type: 'Fire',
+        damage_class: { name: 'Physical' },
+        power: 75,
+        accuracy: 80,
+        pp: 15,
+        effect_entries: [{ short_effect: 'does stuff' }],
+      },
+      {
+        name: 'Flamethrower',
+        type: 'Fire',
+        damage_class: { name: 'Special' },
+        power: 90,
+        accuracy: 100,
+        pp: 10,
+        effect_entries: [{ short_effect: 'does stuff' }],
+      },
+      {
+        name: 'Defence Curl',
+        type: 'Normal',
+        damage_class: { name: 'Status' },
+        pp: 10,
+        effect_entries: [{ short_effect: 'does stuff' }],
+      },
+      {
+        name: 'Hyper Beam',
+        type: 'Normal',
+        damage_class: { name: 'Special' },
+        power: 150,
+        accuracy: 100,
+        pp: 5,
+        effect_entries: [{ short_effect: 'does stuff' }],
+      },
     ],
     image: { front: '' },
     types: ['Fire'],
@@ -39,7 +69,7 @@ const initialState = {
       stage1: ['lavamon'],
       stage2: ['sunmon'],
     },
-    movesLocked: false,
+    movesLocked: true,
   }],
   team2: [],
   fetching: false,
@@ -69,7 +99,7 @@ export default ( state = initialState, { type, payload = { teamNum: 0 } } ) => {
     case FETCH_POKE + '_REJECTED':
       return { ...state, fetching: false }
 
-    case SET_MOVES: {
+    case SET_MOVES + '_FULFILLED': {
       const newTeam = [...state[targetTeam]];
       const newPokeIndex = newTeam.findIndex(poke => poke.localId === payload.pokeId);
       newTeam[newPokeIndex].moves = [...payload.moves];
@@ -158,7 +188,7 @@ export function fetchPoke( name, level, teamNum ) {
       const evolutionChain = await axios.get(speciesData.data.evolution_chain.url);
 
       const { id, name: pokeName, sprites, types, stats, moves } = poke.data;
-      const { baseStats, statsAtLevel } = formatStats(stats, level);
+      const { baseStats, statsAtLevel } = formatStats(stats, Math.floor(level / 10) * 10);
 
       return {
         id,
@@ -181,13 +211,43 @@ export function fetchPoke( name, level, teamNum ) {
   };
 }
 
+function formatDetailMove(move) {
+  const {
+    contest_combos,
+    contest_type,
+    contest_effect,
+    super_contest_effect,
+    names,
+    name,
+    type,
+    ...rest
+  } = move;
+
+  return {
+    ...rest,
+    name: startCase(name),
+    type: startCase(type.name),
+  };
+}
+
 export function setMoves(moves, teamNum, pokeId) {
+  const getMove = url => axios.get(url);
+
   return {
     type: SET_MOVES,
-    payload: {
-      moves: [...moves],
-      teamNum,
-      pokeId,
+    payload: async () => {
+      const newMoves = await Promise.all([
+        getMove(moves[0].link),
+        getMove(moves[1].link),
+        getMove(moves[2].link),
+        getMove(moves[3].link),
+      ]);
+
+      return {
+        moves: newMoves.map(move => formatDetailMove(move.data)),
+        teamNum,
+        pokeId,
+      };
     },
   };
 }

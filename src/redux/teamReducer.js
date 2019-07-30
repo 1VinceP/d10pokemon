@@ -33,6 +33,12 @@ const initialState = {
     ],
     image: { front: '' },
     types: ['Fire'],
+    lineage: {
+      current: 'basic',
+      basic: 'firemon',
+      stage1: ['lavamon'],
+      stage2: ['sunmon'],
+    },
     movesLocked: false,
   }],
   team2: [],
@@ -90,17 +96,27 @@ export default ( state = initialState, { type, payload = { teamNum: 0 } } ) => {
 }
 
 function formatEvolution( { chain }, currentName ) {
-  let stage = currentName === chain.species.name ? 0
-    : chain.evolves_to.some(poke => poke.species.name === currentName.split('-')[0]) ? 1
-    : 2;
-  if( chain.is_baby ) stage -= 1;
-  console.log(stage);
-  let nextStage;
-  if( stage === 0 && chain.evolves_to.length > 0 ) {
-    nextStage = chain.evolves_to.map(poke => poke.species.name);
+  const getEvo = set => set.species.name;
+  const evos = {
+    current: '',
+    hasBaby: false,
+  };
+
+  evos.hasBaby = chain.is_baby; // set if evo chain has a baby
+  evos.basic = getEvo(chain); // set the basic pokemon
+  if( chain.evolves_to.length > 0) { // set stage1 evos
+    evos.stage1 = chain.evolves_to.map( set => getEvo(set) );
+    if( chain.evolves_to.every( set => set.evolves_to.length > 0 ) ) { // set stage2 evos
+      evos.stage2 = chain.evolves_to.map( set => set.evolves_to.map( newSet => getEvo(newSet) ) );
+    }
   }
 
-  return nextStage;
+  // set current stage
+  if( evos.basic === currentName.toLowerCase() ) evos.current = 'basic';
+  else if( evos.stage1.findIndex(poke => poke === currentName.toLowerCase()) >= 0 ) evos.current = 'stage1';
+  else evos.current = 'stage2';
+
+  return evos;
 }
 
 function formatStats( stats, level ) {
@@ -137,19 +153,19 @@ export function fetchPoke( name, level, teamNum ) {
   return {
     type: FETCH_POKE,
     payload: async () => {
-      ///// TODO: initial call to species? /////
       const poke = await axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`);
-      const { id, name: pokeName, sprites, types, stats, moves, species } = poke.data;
-      const { baseStats, statsAtLevel } = formatStats(stats, level);
-      const speciesData = await axios.get(species.url);
+      const speciesData = await axios.get(poke.data.species.url);
       const evolutionChain = await axios.get(speciesData.data.evolution_chain.url);
+
+      const { id, name: pokeName, sprites, types, stats, moves } = poke.data;
+      const { baseStats, statsAtLevel } = formatStats(stats, level);
 
       return {
         id,
         name: startCase(pokeName),
         types: formatTypes(types),
         moves: formatMoves(moves),
-        evolution: formatEvolution(evolutionChain.data, name),
+        lineage: formatEvolution(evolutionChain.data, name),
         image: {
           front: sprites.front_default,
           back: sprites.back_default,

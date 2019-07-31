@@ -28,4 +28,7 @@ export default {
       basic: '',
    },
    movesLocked: false,
+   hasAttacked: false,
+   hasMoved: false,
+   coords: { row: 0, col: 0 },
 };

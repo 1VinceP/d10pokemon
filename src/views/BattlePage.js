@@ -4,6 +4,7 @@ import { setInitiative } from '../redux/d10gameReducer';
 import injectSheet from 'react-jss';
 
 import TurnTray from '../components/TurnTray';
+import GameWindow from '../components/D10/D10Window';
 
 function BattlePage({
    classes,
@@ -14,11 +15,19 @@ function BattlePage({
    // effects
    useEffect(() => {
       setInitiative(teams);
-   }, []);
+   }, [setInitiative, teams]);
 
 	return (
 		<div className={battle_}>
-         <section className={gameArea_}></section>
+         <section className={gameArea_}>
+            <div className="window">
+               <GameWindow
+                  list={d10.initiative}
+               />
+            </div>
+
+            <div className="log"></div>
+         </section>
 
 			<section className={bottomTray_}>
             <TurnTray list={d10.initiative} />
@@ -41,6 +50,16 @@ const styles = theme => ({
    gameArea_: {
       height: '80%',
       width: '100%',
+      display: 'flex',
+      '& .window': {
+         height: '100%',
+         width: '80%',
+      },
+      '& .log': {
+         height: '100%',
+         width: '20%',
+         borderLeft: [[1, 'solid', 'red']],
+      },
    },
 
    bottomTray_: {

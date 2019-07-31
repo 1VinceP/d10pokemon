@@ -31,7 +31,6 @@ const styles = {
 		width: '100%',
 		height: 30,
 		boxShadow: [[0, 4, 4, '#0004']],
-		marginBottom: 30,
 	},
 };
 

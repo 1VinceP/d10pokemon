@@ -31,7 +31,9 @@ export default ( state = initialState, { type, payload }) => {
 }
 
 export function setInitiative({ team1, team2 }) {
-   const all = [...team1, ...team2].map(poke => {
+   const t1 = team1.map((poke, i) => ({ ...poke, coords: { row: 5, col: i + 1 } }));
+   const t2 = team2.map((poke, i) => ({ ...poke, coords: { row: 1, col: 10 - i } }));
+   const all = [...t1, ...t2].map(poke => {
       const dieRoll = roll();
       const bonus = getSpeedBonus(poke.statsAtLevel.speed);
       const initiative = dieRoll + bonus;

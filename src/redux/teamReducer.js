@@ -6,9 +6,10 @@ import { getByLevel } from '../utils/getLevelStats';
 const initialState = {
    team1: [
       {
-      name: 'firemon',
+      name: 'firemon1',
+      coords: { row: 1, col: 10 },
       id: -1,
-      localId: 999,
+      localId: 9991,
       level: 70,
       teamNum: 2,
       baseStats: {
@@ -74,9 +75,10 @@ const initialState = {
       movesLocked: true,
       },
       {
-         name: 'firemon',
+         name: 'firemon2',
+         coords: { row: 1, col: 9 },
          id: -1,
-         localId: 999,
+         localId: 9992,
          level: 70,
          teamNum: 2,
          baseStats: {
@@ -142,9 +144,10 @@ const initialState = {
          movesLocked: true,
       },
       {
-         name: 'firemon',
+         name: 'firemon3',
+         coords: { row: 6, col: 1 },
          id: -1,
-         localId: 999,
+         localId: 9993,
          level: 70,
          teamNum: 2,
          baseStats: {
@@ -218,6 +221,7 @@ const initialState = {
 const FETCH_POKE = 'FETCH_POKE';
 const SET_MOVES = 'SET_MOVES';
 const DELETE_POKE = 'DELETE_POKE';
+const LOAD_POKE = 'LOAD_POKE';
 
 export default (state = initialState, { type, payload = { teamNum: 0 } }) => {
    const targetTeam = `team${payload.teamNum}`;
@@ -253,6 +257,15 @@ export default (state = initialState, { type, payload = { teamNum: 0 } }) => {
          const newTeam = [...state[targetTeam]];
          const pokeIndex = newTeam.findIndex(poke => poke.localId === payload.localId);
          newTeam.splice(pokeIndex, 1);
+         return {
+            ...state,
+            [targetTeam]: newTeam,
+         };
+      }
+
+      case LOAD_POKE: {
+         const newTeam = [...state[targetTeam]];
+         newTeam.push(payload.poke);
          return {
             ...state,
             [targetTeam]: newTeam,
@@ -345,6 +358,8 @@ export function fetchPoke(name, level, teamNum) {
             level,
             teamNum,
             movesLocked: false,
+            hasMoved: false,
+            hasAttacked: false,
          };
       },
    };
@@ -395,5 +410,12 @@ export function deletePoke(teamNum, localId) {
    return {
       type: DELETE_POKE,
       payload: { teamNum, localId },
+   };
+}
+
+export function loadPoke( teamNum, poke ) {
+   return {
+      type: LOAD_POKE,
+      payload: { teamNum, poke },
    };
 }

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import injectSheet from 'react-jss';
 import PropTypes from 'prop-types';
 
-function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke }) {
+function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }) {
 	const {
 		container_, nameContainer_, titleContainerBg_, titleContainer_,
 		imageContainer_, attackStatContainer_, statContainer_,
@@ -47,6 +47,32 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke }) {
 		attackDataRef.current.style.opacity = 0;
 	}, []);
 
+	const savePoke = useCallback(() => {
+		const concatName = poke.name + poke.level;
+		let list = JSON.parse( window.localStorage.getItem('pokeList') );
+		if( !list ) list = [];
+		window.localStorage.setItem( concatName, JSON.stringify(poke) );
+
+		const index = list.findIndex( name => name === concatName );
+		if( index < 0 ) {
+			list.push( concatName );
+			window.localStorage.setItem( 'pokeList', JSON.stringify(list) );
+		}
+	}, [poke]);
+
+	const deleteFromStorage = useCallback(() => {
+		const concatName = poke.name + poke.level;
+		let list = JSON.parse( window.localStorage.getItem('pokeList') );
+		if( !list ) list = [];
+
+		window.localStorage.removeItem(concatName);
+		const index = list.findIndex( name => name === concatName );
+		if( index >= 0 ) {
+			list.splice( index, 1 );
+			window.localStorage.setItem( 'pokeList', JSON.stringify(list) );
+		}
+	}, [poke.name, poke.level]);
+
 	// element creators
 	const headerTitles = ['', 'hp', 'atk', 'def', 'sp.atk', 'sp.def', 'spd'];
 	const headers = headerTitles.map(title => (
@@ -67,8 +93,14 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke }) {
 
 			<section className={`${titleContainerBg_} top right bottom`}>
 				<div className={titleContainer_}>
-					{!poke.movesLocked && <button onClick={setMoves}>Lock Moves</button>}
-					<button onClick={onDelete}>X</button>
+					{!inCombat && (
+						<>
+							<button onClick={savePoke}>Store Poke</button>
+							<button onClick={deleteFromStorage}>Delete from Storage</button>
+							{!poke.movesLocked && <button onClick={setMoves}>Lock Moves</button>}
+							<button onClick={onDelete}>X</button>
+						</>
+					)}
 				</div>
 			</section>
 
@@ -168,8 +200,9 @@ const styles = theme => {
 
 	return {
 		container_: {
-         width: '100%',
-         maxWidth: props => props.inCombat ? 600 : '100%',
+			width: '100%',
+			maxWidth: props => props.inCombat ? 600 : '100%',
+			minWidth: props => props.inCombat ? 600 : 'auto',
 			display: 'grid',
 			gridTemplateRows: '30px 100px 30px',
 			gridTemplateColumns: '120px auto',

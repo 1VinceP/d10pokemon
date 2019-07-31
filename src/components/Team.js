@@ -5,11 +5,11 @@ import PropTypes from 'prop-types';
 import Pokemon from 'pokemon';
 
 import Poke from './Poke';
-import { fetchPoke, setMoves, deletePoke } from '../redux/teamReducer';
+import { fetchPoke, setMoves, deletePoke, loadPoke } from '../redux/teamReducer';
 
 function Team({
    classes, teamNum, team, fetching, limit,
-   fetchPoke, setMoves, deletePoke,
+   fetchPoke, setMoves, deletePoke, loadPoke,
 }) {
    const { inputs_ } = classes;
    /// state
@@ -43,6 +43,12 @@ function Team({
       setMoves(moves, teamId, pokeId);
    }, [setMoves]);
 
+   const getFromStorage = useCallback(() => {
+      const loadedPoke = JSON.parse( window.localStorage.getItem('firemon170') );
+      console.log(loadedPoke);
+      if( loadedPoke ) loadPoke(teamNum, loadedPoke);
+   }, [loadPoke, teamNum]);
+
    /// element creators
    const mappedTeam = team.map(poke => (
       <Poke
@@ -71,7 +77,10 @@ function Team({
    );
    mappedTeam.push(newPoke);
 
-   return <div>{mappedTeam}</div>
+   return <div>
+      {mappedTeam}
+      <button onClick={getFromStorage}>Get from storage</button>
+   </div>
 }
 
 Team.propTypes = {
@@ -115,5 +124,5 @@ function mapStateToProps(state, ownProps) {
    };
 }
 
-const actions = { fetchPoke, setMoves, deletePoke };
+const actions = { fetchPoke, setMoves, deletePoke, loadPoke };
 export default connect(mapStateToProps, actions)(injectSheet(styles)(Team));

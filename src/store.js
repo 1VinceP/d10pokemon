@@ -1,10 +1,13 @@
 import { createStore, combineReducers, applyMiddleware, compose } from 'redux';
 import promise from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
+
 import teamReducer from './redux/teamReducer';
+import d10Reducer from './redux/d10gameReducer';
 
 const reducers = combineReducers({
   teams: teamReducer,
+  d10: d10Reducer,
 });
 
 const composition = compose(

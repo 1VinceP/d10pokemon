@@ -1,16 +1,18 @@
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
-import { setInitiative } from '../redux/d10gameReducer';
 import injectSheet from 'react-jss';
 
+import { setInitiative, setSelection, pushDetailLog } from '../redux/d10gameReducer';
 import TurnTray from '../components/TurnTray';
 import GameWindow from '../components/D10/D10Window';
+import Log from '../components/Log';
 
 function BattlePage({
    classes,
-   teams, d10, setInitiative,
+   teams, d10, setInitiative, setSelection, pushDetailLog,
 }) {
 	const { battle_, gameArea_, bottomTray_ } = classes;
+   const actions = { setSelection, pushDetailLog };
 
    // effects
    useEffect(() => {
@@ -23,10 +25,15 @@ function BattlePage({
             <div className="window">
                <GameWindow
                   list={d10.initiative}
+                  actions={actions}
+                  selections={d10.selections}
+                  // disabled={d10.selections.attacker && !d10.selections.attack}
                />
             </div>
 
-            <div className="log"></div>
+            <div className="log">
+               <Log log={d10.log} />
+            </div>
          </section>
 
 			<section className={bottomTray_}>
@@ -77,5 +84,5 @@ function mapStateToProps( state ) {
 	};
 }
 
-const actions = { setInitiative };
+const actions = { setInitiative, setSelection, pushDetailLog };
 export default connect(mapStateToProps, actions)(injectSheet(styles)(BattlePage));

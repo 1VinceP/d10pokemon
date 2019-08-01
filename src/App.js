@@ -30,6 +30,10 @@ const styles = {
 	header_: {
 		width: '100%',
 		height: 30,
+		position: 'relative',
+		top: 0,
+		left: 0,
+		zIndex: 10,
 		boxShadow: [[0, 4, 4, '#0004']],
 	},
 };

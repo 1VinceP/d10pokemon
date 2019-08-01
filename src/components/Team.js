@@ -6,15 +6,18 @@ import Pokemon from 'pokemon';
 
 import Poke from './Poke';
 import { fetchPoke, setMoves, deletePoke, loadPoke } from '../redux/teamReducer';
+import useLocalStorage from 'react-use-localstorage';
 
 function Team({
    classes, teamNum, team, fetching, limit,
    fetchPoke, setMoves, deletePoke, loadPoke,
 }) {
-   const { inputs_ } = classes;
+   const { inputs_, loadFromStorage_ } = classes;
    /// state
    const [newName, setNewName] = useState('');
    const [newLevel, setNewLevel] = useState(0);
+   const [selectedFromStorage, setSelected] = useState('');
+   const [storedList] = useLocalStorage('pokeList', []);
 
    /// methods
    const handleChangeNewName = useCallback(e => setNewName(e.target.value.toLowerCase()), [setNewName]);
@@ -43,11 +46,15 @@ function Team({
       setMoves(moves, teamId, pokeId);
    }, [setMoves]);
 
+   const selectFromStorage = useCallback(e => {
+      setSelected(e.target.value);
+   }, [setSelected]);
+
    const getFromStorage = useCallback(() => {
-      const loadedPoke = JSON.parse( window.localStorage.getItem('firemon170') );
-      console.log(loadedPoke);
-      if( loadedPoke ) loadPoke(teamNum, loadedPoke);
-   }, [loadPoke, teamNum]);
+      const loadedPoke = JSON.parse( window.localStorage.getItem(selectedFromStorage) );
+      if( loadedPoke ) loadPoke( teamNum, loadedPoke );
+      setSelected('');
+   }, [loadPoke, teamNum, selectedFromStorage]);
 
    /// element creators
    const mappedTeam = team.map(poke => (
@@ -77,9 +84,16 @@ function Team({
    );
    mappedTeam.push(newPoke);
 
+   const storedOptions = JSON.parse(storedList).map(poke => <option key={poke} value={poke}>{poke}</option>);
+   storedOptions.unshift(<option key="select" value="">Select</option>);
+
    return <div>
       {mappedTeam}
-      <button onClick={getFromStorage}>Get from storage</button>
+      <div className={loadFromStorage_}>
+         <select value={selectedFromStorage} onChange={selectFromStorage}>{storedOptions}</select>
+         <button onClick={getFromStorage}>Get from storage</button>
+         <div>Refresh page to see storage changes</div>
+      </div>
    </div>
 }
 
@@ -111,6 +125,11 @@ const styles = {
          '-webkit-appearance': 'none',
          margin: 0,
       },
+   },
+
+   loadFromStorage_: {
+      width: '100%',
+      '& div': { color: '#666' },
    },
 };
 

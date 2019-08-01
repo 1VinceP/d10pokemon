@@ -7,8 +7,6 @@ import Poke from '../components/Poke';
 function TurnTray({ classes, list }) {
    const { tray_ } = classes;
 
-   console.log(list);
-
    const pokes = list.map(poke => <Poke key={poke.localId} poke={poke} teamNum={poke.teamNum} inCombat />)
    return (
       <div className={tray_}>

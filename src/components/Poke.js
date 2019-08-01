@@ -47,7 +47,7 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 		attackDataRef.current.style.opacity = 0;
 	}, []);
 
-	const savePoke = useCallback(() => {
+	const saveToStorage = useCallback(() => {
 		const concatName = poke.name + poke.level;
 		let list = JSON.parse( window.localStorage.getItem('pokeList') );
 		if( !list ) list = [];
@@ -95,7 +95,7 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 				<div className={titleContainer_}>
 					{!inCombat && (
 						<>
-							<button onClick={savePoke}>Store Poke</button>
+							<button onClick={saveToStorage}>Store Poke</button>
 							<button onClick={deleteFromStorage}>Delete from Storage</button>
 							{!poke.movesLocked && <button onClick={setMoves}>Lock Moves</button>}
 							<button onClick={onDelete}>X</button>

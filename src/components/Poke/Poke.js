@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useRef } from 'react';
 import injectSheet from 'react-jss';
 import PropTypes from 'prop-types';
+import startCase from 'lodash/startCase';
 
-function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }) {
+import Attack from './Attack';
+
+function Poke({ classes, theme, poke, teamNum, actions, inCombat, canSelectAttack }) {
 	const {
 		container_, nameContainer_, titleContainerBg_, titleContainer_,
 		imageContainer_, attackStatContainer_, statContainer_,
@@ -32,20 +35,25 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 
 	const setMoves = useCallback(() => {
 		const { movesLocked, localId } = poke;
-		!movesLocked && lockMoves([move1, move2, move3, move4], teamNum, localId);
-	}, [lockMoves, move1, move2, move3, move4, teamNum, poke]);
+		!movesLocked && actions.lockMoves([move1, move2, move3, move4], teamNum, localId, poke.name);
+	}, [actions, move1, move2, move3, move4, teamNum, poke]);
 
 	const onDelete = useCallback(() => {
-		deletePoke(teamNum, poke.localId);
-	}, [deletePoke, teamNum, poke.localId]);
+		actions.deletePoke(teamNum, poke.localId);
+		actions.pushDetailLog(`${poke.name} deleted from Team${teamNum}`);
+	}, [actions, teamNum, poke.localId, poke.name]);
 
 	const showMoveDetails = useCallback(() => {
-		attackDataRef.current.style.opacity = 1;
-	}, []);
+		if( poke.movesLocked ) {
+			attackDataRef.current.style.opacity = 1;
+		}
+	}, [poke.movesLocked]);
 
 	const resetMoveDetails = useCallback(() => {
-		attackDataRef.current.style.opacity = 0;
-	}, []);
+		if( poke.movesLocked ) {
+			attackDataRef.current.style.opacity = 0;
+		}
+	}, [poke.movesLocked]);
 
 	const saveToStorage = useCallback(() => {
 		const concatName = poke.name + poke.level;
@@ -58,7 +66,9 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 			list.push( concatName );
 			window.localStorage.setItem( 'pokeList', JSON.stringify(list) );
 		}
-	}, [poke]);
+
+		actions.pushDetailLog(`${poke.name} saved to storage`);
+	}, [actions, poke]);
 
 	const deleteFromStorage = useCallback(() => {
 		const concatName = poke.name + poke.level;
@@ -71,7 +81,15 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 			list.splice( index, 1 );
 			window.localStorage.setItem( 'pokeList', JSON.stringify(list) );
 		}
-	}, [poke.name, poke.level]);
+
+		actions.pushDetailLog(`${poke.name} deleted from storage`);
+	}, [actions, poke.name, poke.level]);
+
+	const handleSelectAttack = useCallback(move => {
+		if( inCombat && canSelectAttack ) {
+			actions.setSelection(move);
+		}
+	}, [actions, inCombat, canSelectAttack]);
 
 	// element creators
 	const headerTitles = ['', 'hp', 'atk', 'def', 'sp.atk', 'sp.def', 'spd'];
@@ -83,9 +101,20 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 		.map(move => <option key={move.name} value={JSON.stringify({ ...move })}>{move.name}</option>);
 	moves.unshift(<option key="select" value="">Select</option>);
 
-	const moveBg = index => ({
-		background: `linear-gradient(to bottom, ${theme.colors.secondary} 80%, ${theme.colors[poke.moves[index].type]})`,
-	});
+	const mappedAttacks = []
+	for( let i = 1; i <= 4; i++ ) {
+		const move = poke.moves[i - 1];
+		mappedAttacks.push(
+			<Attack
+				key={i}
+				moveLocked={poke.movesLocked}
+				content={!poke.movesLocked ? moves : { name: move.name, type: move.type }}
+				onChange={e => handleChangeMove(e, i)}
+				onClick={() => handleSelectAttack(move)}
+				onEnter={() => poke.movesLocked && setMoveDetails(move)}
+			/>
+		);
+	}
 
 	return (
 		<div className={container_}>
@@ -139,7 +168,7 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 						<div className="box bottom right">Acc</div>
 						<div className="box bottom right">PP</div>
 						{/* stats */}
-						<div className="box base bottom right">{moveDetails.damage_class.name}</div>
+						<div className="box base bottom right">{startCase(moveDetails.damage_class.name)}</div>
 						<div className="box base bottom right">{moveDetails.power || '--'}</div>
 						<div className="box base bottom right">{moveDetails.accuracy || '--'}</div>
 						<div className="box base bottom right">{moveDetails.pp}</div>
@@ -149,38 +178,38 @@ function Poke({ classes, theme, poke, teamNum, lockMoves, deletePoke, inCombat }
 				</section>
 			</section>
 
-
-			{!poke.movesLocked ? (
-				<section className={`${attackContainer_} left right bottom`}>
-					<select onChange={e => handleChangeMove(e, 1)}>{moves}</select>
-					<select onChange={e => handleChangeMove(e, 2)}>{moves}</select>
-					<select onChange={e => handleChangeMove(e, 3)}>{moves}</select>
-					<select onChange={e => handleChangeMove(e, 4)}>{moves}</select>
-				</section>
-			)
-			: (
-				<section className={`${attackContainer_} left right bottom`} onMouseEnter={showMoveDetails} onMouseLeave={resetMoveDetails}>
-					<div style={moveBg(0)} onMouseEnter={() => setMoveDetails(poke.moves[0])}>{poke.moves[0].name}</div>
-					<div style={moveBg(1)} onMouseEnter={() => setMoveDetails(poke.moves[1])}>{poke.moves[1].name}</div>
-					<div style={moveBg(2)} onMouseEnter={() => setMoveDetails(poke.moves[2])}>{poke.moves[2].name}</div>
-					<div style={moveBg(3)} onMouseEnter={() => setMoveDetails(poke.moves[3])}>{poke.moves[3].name}</div>
-				</section>
-			)}
+			<section
+				className={`${attackContainer_} left right bottom`}
+				onMouseEnter={showMoveDetails}
+				onMouseLeave={resetMoveDetails}
+			>
+				{mappedAttacks}
+			</section>
 		</div>
 	);
 }
 
 Poke.propTypes = {
-	lockMoves: PropTypes.func,
-	deletePoke: PropTypes.func,
+	actions: PropTypes.shape({
+		lockMoves: PropTypes.func,
+		deletePoke: PropTypes.func,
+		pushDetailLog: PropTypes.func,
+		selectAttack: PropTypes.func,
+	}),
+	canSelectAttack: PropTypes.bool,
 	inCombat: PropTypes.bool,
 	poke: PropTypes.object,
 	teamNum: PropTypes.number,
 };
 
 Poke.defaultProps = {
-	lockMoves: () => { },
-	deletePoke: () => { },
+	actions: {
+		lockMoves: () => {},
+		deletePoke: () => {},
+		pushDetailLog: () => {},
+		setSelection: () => {},
+	},
+	canSelectAttack: false,
 	inCombat: false,
 	poke: {
 		name: '',
@@ -324,28 +353,6 @@ const styles = theme => {
 			justifyContent: 'space-around',
 			padding: [[4, 0]],
 			color: 'white',
-			'& select, div': {
-				width: '22%',
-			},
-			'& select': {
-				background: theme.colors.secondary,
-				color: 'white',
-				border: 'none',
-			},
-			'& div': {
-				display: 'flex',
-				justifyContent: 'center',
-				alignItems: 'center',
-				border: [[1, 'solid', theme.colors.secondary]],
-				borderRadius: 3,
-				textAlign: 'center',
-				transition: [['.15s', 'all', 'ease-in-out']],
-				fontSize: 12,
-				'&:hover': {
-					cursor: 'pointer',
-					border: [[1, 'solid', 'white']],
-				},
-			},
 		},
 	};
 };

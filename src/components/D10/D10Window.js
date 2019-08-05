@@ -63,13 +63,11 @@ function D10Window({ classes, list, actions, selections }) {
 
 D10Window.propTypes = {
 	actions: PropTypes.objectOf(PropTypes.func),
-	disabled: PropTypes.bool,
 	list: PropTypes.arrayOf(PropTypes.object),
 };
 
 D10Window.defaultProps = {
 	actions: {},
-	disabled: PropTypes.bool,
 	list: [],
 };
 

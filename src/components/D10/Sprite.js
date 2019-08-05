@@ -2,16 +2,16 @@ import React, { useCallback } from 'react';
 import injectSheet from 'react-jss';
 import PropTypes from 'prop-types';
 
-function Sprite({ classes, poke, row, col, onClick, disabled }) {
+function Sprite({ classes, poke, row, col, onClick, disabled, isAttacker }) {
    const { empty_, sprite_ } = classes;
 
    const handleEmptyClick = useCallback(() => {
       !disabled && onClick(false, { x: col, y: row });
-   }, [onClick, col, row, poke, disabled]);
+   }, [onClick, col, row, disabled]);
 
    const handleSpriteClick = useCallback(() => {
-      !disabled && onClick(true, { x: col, y: row }, poke);
-   }, [onClick, col, row, poke, disabled]);
+      (!disabled || isAttacker) && onClick(true, { x: col, y: row }, poke);
+   }, [onClick, col, row, poke, disabled, isAttacker]);
 
    return !poke.id ? <div onClick={handleEmptyClick} className={empty_} />
    : (
@@ -46,6 +46,11 @@ const styles = {
    },
 
    sprite_: {
+      height: '100%',
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
       border: props => props.isAttacker && [[2, 'solid', 'green']],
       '& img': {
          maxHeight: '100%',

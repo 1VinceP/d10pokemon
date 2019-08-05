@@ -1,6 +1,8 @@
 import axios from 'axios';
 import startCase from 'lodash/startCase';
 import sortBy from 'lodash/sortBy';
+import moment from 'moment';
+
 import { getByLevel } from '../utils/getLevelStats';
 
 const initialState = {
@@ -23,7 +25,7 @@ export default (state = initialState, { type, payload = { teamNum: 0 } }) => {
       case FETCH_POKE + '_FULFILLED': {
          const newTeam = [
             ...state[targetTeam],
-            { ...payload, currentHp: payload.statsAtLevel.hp, localId: new Date() },
+            { ...payload, currentHp: payload.statsAtLevel.hp, localId: moment() },
          ];
          return {
             ...state,
@@ -206,8 +208,14 @@ export function deletePoke(teamNum, localId) {
 }
 
 export function loadPoke( teamNum, poke ) {
+   const updatedPoke = {
+      ...poke,
+      localId: moment(),
+      teamNum,
+   };
+
    return {
       type: LOAD_POKE,
-      payload: { teamNum, poke },
+      payload: { teamNum, poke: updatedPoke },
    };
 }

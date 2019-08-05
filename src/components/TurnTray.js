@@ -1,13 +1,25 @@
 import React from 'react';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import injectSheet from 'react-jss';
 import PropTypes from 'prop-types';
 
-import Poke from '../components/Poke';
+import Poke from './Poke/Poke';
+import { setSelection } from '../redux/d10gameReducer';
 
-function TurnTray({ classes, list }) {
+function TurnTray({ classes, list, canSelectAttack, actions }) {
    const { tray_ } = classes;
 
-   const pokes = list.map(poke => <Poke key={poke.localId} poke={poke} teamNum={poke.teamNum} inCombat />)
+   const pokes = list.map(poke => (
+      <Poke
+         key={poke.localId}
+         poke={poke}
+         teamNum={poke.teamNum}
+         canSelectAttack={canSelectAttack && !!poke.movesLocked}
+         actions={actions}
+         inCombat
+      />
+   ));
    return (
       <div className={tray_}>
          {pokes}
@@ -23,7 +35,7 @@ TurnTray.defaultProps = {
    list: [],
 };
 
-const styles = theme => ({
+const styles = {
    tray_: {
       height: '100%',
       width: '100%',
@@ -31,6 +43,17 @@ const styles = theme => ({
       overflowX: 'scroll',
       boxShadow: [['inset', 0, 0, 16, '#000']],
    },
-});
+};
 
-export default injectSheet(styles)(TurnTray);
+function mapStateToProps({ d10: { selections } }) {
+   const canSelectAttack = !!selections.attacker && !selections.targets.length;
+   return { canSelectAttack };
+}
+
+function mapDispatchToProps( dispatch ) {
+   return {
+      actions: bindActionCreators({ setSelection }, dispatch),
+   };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(injectSheet(styles)(TurnTray));

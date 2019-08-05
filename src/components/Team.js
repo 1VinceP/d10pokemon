@@ -4,13 +4,14 @@ import injectSheet from 'react-jss';
 import PropTypes from 'prop-types';
 import Pokemon from 'pokemon';
 
-import Poke from './Poke';
+import Poke from './Poke/Poke';
+import { pushDetailLog } from '../redux/trackingActionsReducer';
 import { fetchPoke, setMoves, deletePoke, loadPoke } from '../redux/teamReducer';
 import useLocalStorage from 'react-use-localstorage';
+import { bindActionCreators } from 'redux';
 
 function Team({
-   classes, teamNum, team, fetching, limit,
-   fetchPoke, setMoves, deletePoke, loadPoke,
+   classes, teamNum, team, fetching, limit, actions,
 }) {
    const { inputs_, loadFromStorage_ } = classes;
    /// state
@@ -24,11 +25,12 @@ function Team({
 
    const addNew = useCallback(() => {
       if (newName && newLevel && team.length < limit) {
-         fetchPoke(newName, newLevel, teamNum);
+         actions.fetchPoke(newName, newLevel, teamNum);
          setNewName('');
          setNewLevel(0);
+         actions.pushDetailLog(`${newName} lv. ${newLevel} added to Team${teamNum}`);
       }
-   }, [fetchPoke, newName, newLevel, teamNum, team.length, limit]);
+   }, [actions, newName, newLevel, teamNum, team.length, limit]);
 
    const handleChangeNewLevel = useCallback(e => {
       if (e.target.value > 100)
@@ -42,9 +44,13 @@ function Team({
          e.key === 'Enter' && addNew()
    }, [addNew, newName, newLevel]);
 
-   const lockMoves = useCallback((moves, teamId, pokeId) => {
-      setMoves(moves, teamId, pokeId);
-   }, [setMoves]);
+   const lockMoves = useCallback((moves, teamId, pokeId, pokeName) => {
+      actions.setMoves(moves, teamId, pokeId);
+      actions.pushDetailLog(
+         `${pokeName} on Team${teamId} locked moves:`
+         + ` ${moves[0].name}, ${moves[1].name}, ${moves[2].name}, and ${moves[3].name}.`,
+      );
+   }, [actions]);
 
    const selectFromStorage = useCallback(e => {
       setSelected(e.target.value);
@@ -52,9 +58,10 @@ function Team({
 
    const getFromStorage = useCallback(() => {
       const loadedPoke = JSON.parse( window.localStorage.getItem(selectedFromStorage) );
-      if( loadedPoke ) loadPoke( teamNum, loadedPoke );
+      if( loadedPoke ) actions.loadPoke( teamNum, loadedPoke );
       setSelected('');
-   }, [loadPoke, teamNum, selectedFromStorage]);
+      actions.pushDetailLog(`${loadedPoke.name} retrieved from storage`);
+   }, [actions, teamNum, selectedFromStorage]);
 
    /// element creators
    const mappedTeam = team.map(poke => (
@@ -62,8 +69,7 @@ function Team({
          key={poke.localId}
          poke={poke}
          teamNum={teamNum}
-         lockMoves={lockMoves}
-         deletePoke={deletePoke}
+         actions={{ ...actions, lockMoves }}
       />
    ));
 
@@ -133,7 +139,7 @@ const styles = {
    },
 };
 
-function mapStateToProps(state, ownProps) {
+function mapStateToProps( state, ownProps ) {
    const { teams } = state;
 
    return {
@@ -143,5 +149,12 @@ function mapStateToProps(state, ownProps) {
    };
 }
 
-const actions = { fetchPoke, setMoves, deletePoke, loadPoke };
-export default connect(mapStateToProps, actions)(injectSheet(styles)(Team));
+function mapDispatchToProps( dispatch ) {
+   return {
+      actions: bindActionCreators({
+         fetchPoke, setMoves, deletePoke, loadPoke, pushDetailLog,
+      }, dispatch),
+   };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(injectSheet(styles)(Team));

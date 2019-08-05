@@ -2,22 +2,24 @@ import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import injectSheet from 'react-jss';
 
-import { setInitiative, setSelection, pushDetailLog } from '../redux/d10gameReducer';
+import { setInitiative, setSelection } from '../redux/d10gameReducer';
+import { pushDetailLog } from '../redux/trackingActionsReducer';
 import TurnTray from '../components/TurnTray';
 import GameWindow from '../components/D10/D10Window';
 import Log from '../components/Log';
+import { bindActionCreators } from 'redux';
 
 function BattlePage({
    classes,
-   teams, d10, setInitiative, setSelection, pushDetailLog,
+   teams, d10, actions,
 }) {
 	const { battle_, gameArea_, bottomTray_ } = classes;
-   const actions = { setSelection, pushDetailLog };
+   // const actions = { setSelection, pushDetailLog };
 
    // effects
    useEffect(() => {
-      setInitiative(teams);
-   }, [setInitiative, teams]);
+      actions.setInitiative(teams);
+   }, [actions, teams]);
 
 	return (
 		<div className={battle_}>
@@ -27,7 +29,6 @@ function BattlePage({
                   list={d10.initiative}
                   actions={actions}
                   selections={d10.selections}
-                  // disabled={d10.selections.attacker && !d10.selections.attack}
                />
             </div>
 
@@ -75,14 +76,16 @@ const styles = theme => ({
    },
 });
 
-function mapStateToProps( state ) {
-	const { teams, d10 } = state;
-
-	return {
-      teams,
-      d10,
-	};
+function mapStateToProps({ teams, d10 }) {
+	return { teams, d10 };
 }
 
-const actions = { setInitiative, setSelection, pushDetailLog };
-export default connect(mapStateToProps, actions)(injectSheet(styles)(BattlePage));
+function mapDispatchToProps( dispatch ) {
+   return {
+      actions: bindActionCreators({
+         setInitiative, setSelection, pushDetailLog
+      }, dispatch),
+   };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(injectSheet(styles)(BattlePage));

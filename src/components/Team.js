@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import { connect } from 'react-redux';
 import injectSheet from 'react-jss';
 import PropTypes from 'prop-types';
-import Pokemon from 'pokemon';
 
 import Poke from './Poke/Poke';
 import { pushDetailLog } from '../redux/trackingActionsReducer';
@@ -73,7 +72,8 @@ function Team({
       />
    ));
 
-   const pokeOptions = Pokemon.all().sort().map(poke => <option key={poke} value={poke}>{poke}</option>);
+   const pokeOptions = JSON.parse(localStorage.getItem('allNameList'))
+      .map(poke => <option key={poke} value={poke}>{poke}</option>);
    pokeOptions.unshift(<option key="select" value="">Select</option>);
 
    const newPoke = (
@@ -81,7 +81,6 @@ function Team({
          ? <div key="fetching">Data retrieval in progress...</div>
          : (
             <div key="new-poke" className={inputs_}>
-               {/* <input value={newName} onKeyPress={handleEnter} onChange={handleChangeNewName} /> */}
                <select onChange={handleChangeNewName}>{pokeOptions}</select>
                <input type="number" step="10" value={newLevel} onKeyPress={handleEnter} onChange={handleChangeNewLevel} placeholder="Level" />
                <button onClick={addNew}>Add</button>

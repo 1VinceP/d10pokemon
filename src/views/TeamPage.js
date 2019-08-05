@@ -1,10 +1,26 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import injectSheet from 'react-jss';
+// import useLocalStorage from 'react-use-localstorage';
+import axios from 'axios';
 
 import Team from '../components/Team';
 
 function TeamPage({ classes }) {
   const { team_, section_, left_ } = classes;
+  // const [allNameList, setAllNameList] = useLocalStorage([]);
+
+  // callbacks
+  const fetchNames = useCallback(async () => {
+    const list = await axios.get('https://pokeapi.co/api/v2/pokemon/?limit=9999');
+    const sortList = list.data.results.map(poke => poke.name).sort();
+    window.localStorage.setItem('allNameList', JSON.stringify(sortList));
+  }, []);
+
+  // effects
+  useEffect(() => {
+    const list = JSON.parse(window.localStorage.getItem('allNameList'));
+    if( list === null || !list.length ) fetchNames();
+  }, [fetchNames]);
 
   return (
     <div className={team_}>

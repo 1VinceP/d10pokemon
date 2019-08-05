@@ -134,7 +134,10 @@ function Poke({ classes, theme, poke, teamNum, actions, inCombat, canSelectAttac
 			</section>
 
 			<section className={`${imageContainer_} right bottom left`}>
-				<img src={poke.image.front} alt="poke" />
+				{poke.image.front
+					? <img src={poke.image.front} alt="poke" />
+					: <div>No Image Found</div>
+				}
 			</section>
 
 			<section className={statContainer_}>
@@ -285,6 +288,10 @@ const styles = theme => {
 				maxHeight: '100%',
 				maxWidth: '100%',
 				transform: 'scale(1.2)',
+			},
+			'& div': {
+				color: '#666',
+				textAlign: 'center',
 			},
 		},
 

@@ -26,6 +26,7 @@ const REMOVE_LAST_LOG = 'REMOVE_LAST_LOG';
 const CLEAR_LOG = 'CLEAR_LOG';
 const SET_SELECTION = 'SET_SELECTION';
 const CLEAR_SELECTIONS = 'CLEAR_SELECTIONS';
+const DEAL_DAMAGE = 'DEAL_DAMAGE';
 
 function rotateInitiative( initiative ) {
    const old = initiative.shift();
@@ -54,6 +55,11 @@ export default ( state = initialState, { type, payload }) => {
          };
       case CLEAR_SELECTIONS:
          return { ...state, selections: initialState.selections };
+
+      case DEAL_DAMAGE:
+         const newInitiative = [...state.initiative];
+         newInitiative[0].currentStats.hp -= 10;
+         return { ...state, initiative: newInitiative };
 
       default:
          return state;
@@ -106,11 +112,19 @@ export function setSelection( value ) {
             dispatch(removeLastLog());
             dispatch(pushDetailLog(`${value.name} deselected as attacker`));
          }
-         // if attacker and no attack, set attack
+         // if attacker and no attack, determine if can set attack
          else {
-            dispatch({ type: SET_SELECTION, payload: { target: 'attack', value } });
-            dispatch(pushToLog(` with ${value.name} (select a target(s))`));
-            dispatch(pushDetailLog(`${value.name} set as attack`));
+            const atks = selections.attacker.moves.map(move => move.name);
+            const hasAtk = atks.some(atk => atk === value.name);
+            // if attacker has the selected attack, set attack
+            if( hasAtk ) {
+               dispatch({ type: SET_SELECTION, payload: { target: 'attack', value } });
+               dispatch(pushToLog(` with ${value.name} (select a target(s))`));
+               dispatch(pushDetailLog(`${value.name} set as attack`));
+            }
+            else {
+               dispatch(pushDetailLog(`${value.name} was selected, but ${selections.attacker.name} does not know that move`));
+            }
          }
       }
       else {

@@ -25,7 +25,7 @@ export default (state = initialState, { type, payload = { teamNum: 0 } }) => {
       case FETCH_POKE + '_FULFILLED': {
          const newTeam = [
             ...state[targetTeam],
-            { ...payload, currentHp: payload.statsAtLevel.hp, localId: moment() },
+            { ...payload },
          ];
          return {
             ...state,
@@ -149,11 +149,13 @@ export function fetchPoke(name, level, teamNum) {
             exp: 0,
             baseStats,
             statsAtLevel,
+            currentStats: statsAtLevel,
             level,
             teamNum,
             movesLocked: false,
             hasMoved: false,
             hasAttacked: false,
+            localId: moment(),
          };
       },
    };

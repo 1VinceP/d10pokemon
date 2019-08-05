@@ -4,7 +4,7 @@ import injectSheet from 'react-jss';
 function Log({ classes, log }) {
    const { log_ } = classes;
 
-   const display = log.map(item => <p key={item.timestamp}>{item.entry}</p>);
+   const display = log.map(item => <p key={item.id}>{item.entry}</p>);
    return (
       <div className={log_}>{display}</div>
    );

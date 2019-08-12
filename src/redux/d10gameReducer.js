@@ -3,7 +3,8 @@ import moment from 'moment';
 
 import { pushDetailLog } from './trackingActionsReducer';
 import roll from '../utils/roll';
-import getSpeedBonus from '../constants/speedChart.constants';
+import getSpeedBonus from '../lookups/speedChart.lookup';
+import handleAttack from '../utils/handleAttack';
 
 const initialState = {
    gameStarted: false,
@@ -67,20 +68,29 @@ export default ( state = initialState, { type, payload }) => {
 }
 
 export function setInitiative({ team1, team2 }) {
-   return dispatch => {
+   return (dispatch, getState) => {
+      const { settings } = getState().d10;
+
       dispatch(pushToLog('Game Start'));
       const t1 = team1.map((poke, i) => ({ ...poke, coords: { row: 5, col: i + 1 } }));
       const t2 = team2.map((poke, i) => ({ ...poke, coords: { row: 1, col: 10 - i } }));
       const all = [...t1, ...t2].map(poke => {
-         const dieRoll = roll();
+         const dieRoll = settings.autoRoll
+            ? roll() : prompt(`Enter the initiative roll for ${poke.name} on team${poke.teamNum}`);
          const bonus = getSpeedBonus(poke.statsAtLevel.speed);
          const initiative = dieRoll + bonus;
          dispatch(pushToLog(`${poke.name} initiative is ${initiative} (${bonus} speed + ${dieRoll})`));
+         dispatch(
+            pushDetailLog(
+               `${poke.name} initiative: ${initiative} (bonus: ${bonus} + roll: ${dieRoll}). Autorolled: ${settings.autoRoll}`,
+            ),
+         );
          return { ...poke, initiative };
       });
       const ordered = orderBy( all, ['initiative', 'name'], 'desc' );
 
       dispatch({ type: SET_INITIATIVE, payload: ordered });
+      dispatch(pushDetailLog('Initiative set'));
    };
 }
 
@@ -98,7 +108,7 @@ export function clearLog() {
 
 export function setSelection( value ) {
    return ( dispatch, getState ) => {
-      const { selections } = getState().d10;
+      const { selections, settings } = getState().d10;
       // if no attacker, set attacker
       if( !selections.attacker ) {
          dispatch({ type: SET_SELECTION, payload: { target: 'attacker', value } });
@@ -142,7 +152,8 @@ export function setSelection( value ) {
             dispatch({ type: SET_SELECTION, payload: { target: 'targets', value: newTargets } });
             dispatch(pushToLog(` with ${value.name} (Team${value.teamNum}) as a target`));
             dispatch(pushDetailLog(`${value.name} added to targets`));
-            // dispatch(handleAttack());
+
+            const battleResult = handleAttack('d10')(selections, settings);
             // dispatch(clearSelections());
             // dispatch(pushDetailLog('Selections cleared'));
          }
@@ -153,5 +164,3 @@ export function setSelection( value ) {
 export function clearSelections() {
    return { type: CLEAR_SELECTIONS };
 }
-
-function handleAttack() {}

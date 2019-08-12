@@ -1,1 +1,1 @@
-export default (amt = 1) => Math.floor(Math.random() * 10) * amt;
+export default (quantity = 1, sides = 10) => Math.floor(Math.random() * sides) * quantity;

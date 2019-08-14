@@ -76,7 +76,7 @@ export function setInitiative({ team1, team2 }) {
       const t2 = team2.map((poke, i) => ({ ...poke, coords: { row: 1, col: 10 - i } }));
       const all = [...t1, ...t2].map(poke => {
          const dieRoll = settings.autoRoll
-            ? roll() : prompt(`Enter the initiative roll for ${poke.name} on team${poke.teamNum}`);
+            ? roll()[0] : prompt(`Enter the initiative roll for ${poke.name} on team${poke.teamNum}`);
          const bonus = getSpeedBonus(poke.statsAtLevel.speed);
          const initiative = dieRoll + bonus;
          dispatch(pushToLog(`${poke.name} initiative is ${initiative} (${bonus} speed + ${dieRoll})`));
